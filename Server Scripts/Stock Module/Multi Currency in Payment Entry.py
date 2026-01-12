@@ -1,3 +1,5 @@
+# Useful မဖြစ်ရင် ဖျက်ပါမယ်။
+
 # Script Type: DocType Event
 # DocType Event: Before Save
 
