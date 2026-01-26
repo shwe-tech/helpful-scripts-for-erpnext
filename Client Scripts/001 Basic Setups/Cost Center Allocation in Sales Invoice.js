@@ -3,19 +3,56 @@
 
 frappe.ui.form.on("Sales Invoice", {
     cost_center: function(frm) {
+        if (!frm.doc.cost_center) return;
+
+        // 1. Allocate Cost Center to Items table
+        (frm.doc.items || []).forEach(function(row) {
+            frappe.model.set_value(
+                row.doctype,
+                row.name,
+                "cost_center",
+                frm.doc.cost_center
+            );
+        });
+
+        // 2. Allocate Cost Center to Taxes table
+        (frm.doc.taxes || []).forEach(function(row) {
+            frappe.model.set_value(
+                row.doctype,
+                row.name,
+                "cost_center",
+                frm.doc.cost_center
+            );
+        });
+
+        frm.refresh_fields(["items", "taxes"]);
+    }
+});
+
+// When a new Item row is added
+frappe.ui.form.on("Sales Invoice Item", {
+    items_add: function(frm, cdt, cdn) {
         if (frm.doc.cost_center) {
-            frm.doc.items.forEach(function(row) {
-                frappe.model.set_value(row.doctype, row.name, "cost_center", frm.doc.cost_center);
-            });
-            frm.refresh_field("items");
+            frappe.model.set_value(
+                cdt,
+                cdn,
+                "cost_center",
+                frm.doc.cost_center
+            );
         }
     }
 });
 
-frappe.ui.form.on("Sales Invoice Item", {
-    items_add: function(frm, cdt, cdn) {
+// When a new Tax row is added
+frappe.ui.form.on("Sales Taxes and Charges", {
+    taxes_add: function(frm, cdt, cdn) {
         if (frm.doc.cost_center) {
-            frappe.model.set_value(cdt, cdn, "cost_center", frm.doc.cost_center);
+            frappe.model.set_value(
+                cdt,
+                cdn,
+                "cost_center",
+                frm.doc.cost_center
+            );
         }
     }
 });

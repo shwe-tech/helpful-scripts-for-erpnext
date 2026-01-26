@@ -3,37 +3,67 @@
 
 frappe.ui.form.on("Purchase Invoice", {
     cost_center: function(frm) {
-        if (frm.doc.cost_center) {
-            // Update cost center for all existing item rows
-            (frm.doc.items || []).forEach(row => {
-                if (row.cost_center !== frm.doc.cost_center) {
-                    frappe.model.set_value(row.doctype, row.name, "cost_center", frm.doc.cost_center);
-                }
-            });
-            frm.refresh_field("items");
-        }
+        if (!frm.doc.cost_center) return;
+
+        // 1. Allocate Cost Center to Item rows
+        (frm.doc.items || []).forEach(row => {
+            if (row.cost_center !== frm.doc.cost_center) {
+                frappe.model.set_value(
+                    row.doctype,
+                    row.name,
+                    "cost_center",
+                    frm.doc.cost_center
+                );
+            }
+        });
+
+        // 2. Allocate Cost Center to Tax rows
+        (frm.doc.taxes || []).forEach(row => {
+            if (row.cost_center !== frm.doc.cost_center) {
+                frappe.model.set_value(
+                    row.doctype,
+                    row.name,
+                    "cost_center",
+                    frm.doc.cost_center
+                );
+            }
+        });
+
+        frm.refresh_fields(["items", "taxes"]);
     },
 
     refresh: function(frm) {
-        // Ensure cost centers stay consistent after refresh
+        // Optional: enforce consistency on refresh
         if (frm.doc.cost_center) {
             frm.trigger("cost_center");
         }
     }
 });
 
+// When a new Item row is added
 frappe.ui.form.on("Purchase Invoice Item", {
     items_add: function(frm, cdt, cdn) {
-        // Assign the parent cost center when a new item row is added
         if (frm.doc.cost_center) {
-            frappe.model.set_value(cdt, cdn, "cost_center", frm.doc.cost_center);
+            frappe.model.set_value(
+                cdt,
+                cdn,
+                "cost_center",
+                frm.doc.cost_center
+            );
         }
     }
 });
 
-
-frappe.ui.form.on('Purchase Invoice Item', {
-	refresh(frm) {
-		// your code here
-	}
-})
+// When a new Tax row is added
+frappe.ui.form.on("Purchase Taxes and Charges", {
+    taxes_add: function(frm, cdt, cdn) {
+        if (frm.doc.cost_center) {
+            frappe.model.set_value(
+                cdt,
+                cdn,
+                "cost_center",
+                frm.doc.cost_center
+            );
+        }
+    }
+});
